@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ModalBottomSheetLayout
 import androidx.compose.material.ModalBottomSheetValue
@@ -41,8 +43,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -67,6 +71,7 @@ fun ItemsScreen(
     val scope = rememberCoroutineScope()
     val keyboard = LocalSoftwareKeyboardController.current
     val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
 
     val bottomSheetState = rememberModalBottomSheetState(
         initialValue = if (viewModel.editItemUiState.isEditing) {
@@ -90,24 +95,26 @@ fun ItemsScreen(
                 modifier = modifier.padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                val saveItem = {
+                    scope.launch {
+                        viewModel.saveItem()
+                        viewModel.finishItemEditing()
+                    }
+                }
+
                 BasicTextField(
                     modifier = Modifier
                         .weight(1f)
                         .focusRequester(focusRequester),
+                    singleLine = true,
                     value = editItemUiState.details.name,
                     onValueChange = {
                         viewModel.updateEditItemUiState(editItemUiState.details.copy(name = it))
                     },
-                    singleLine = true
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { saveItem() })
                 )
-                Button(
-                    onClick = {
-                        scope.launch {
-                            viewModel.saveItem()
-                            viewModel.finishItemEditing()
-                        }
-                    }
-                ) {
+                Button(onClick = { saveItem() }) {
                     Text("保存")
                 }
             }
@@ -117,6 +124,7 @@ fun ItemsScreen(
                     focusRequester.requestFocus()
                     keyboard?.show()
                 } else {
+                    focusManager.clearFocus()
                     keyboard?.hide()
                 }
             }
