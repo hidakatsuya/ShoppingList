@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -67,6 +68,7 @@ fun ItemsScreen(
     val scope = rememberCoroutineScope()
     val keyboard = LocalSoftwareKeyboardController.current
     val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
 
     val bottomSheetState = rememberModalBottomSheetState(
         initialValue = if (viewModel.editItemUiState.isEditing) {
@@ -117,6 +119,7 @@ fun ItemsScreen(
                     focusRequester.requestFocus()
                     keyboard?.show()
                 } else {
+                    focusManager.clearFocus()
                     keyboard?.hide()
                 }
             }
