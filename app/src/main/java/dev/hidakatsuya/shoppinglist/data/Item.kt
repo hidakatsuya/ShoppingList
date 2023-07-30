@@ -1,14 +1,15 @@
 package dev.hidakatsuya.shoppinglist.data
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.room.Entity
+import androidx.room.Index
+import androidx.room.PrimaryKey
 
-class Item(
-    val id: Int,
-    initialName: String = "",
-    initialCompleted: Boolean = false
-) {
-    var name by mutableStateOf(initialName)
-    var completed by mutableStateOf(initialCompleted)
-}
+@Entity(
+    tableName = "items",
+    indices = [Index(value = ["bought"])]
+)
+data class Item(
+    @PrimaryKey(autoGenerate = true) val id: Int,
+    val name: String,
+    val bought: Int = 0
+)
