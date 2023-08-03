@@ -1,4 +1,4 @@
-@file:Suppress("UnstableApiUsage")
+@file:Suppress("UnstableApiUsage", "OldTargetApi")
 
 plugins {
     id("com.android.application")
