@@ -5,7 +5,7 @@ const isPassed = (result) => {
 }
 
 module.exports = async ({ core, resultFile }) => {
-  const result = await fs.readFile(resultFile, 'utf-8')
+  const result = await fs.readFile(resultFile, "utf-8")
 
   core.debug(`result=${result}`)
 
