@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ItemDao {
-    @Query("SELECT * FROM items WHERE bought = 0 ORDER BY id")
+    @Query("SELECT * FROM items WHERE bought = 0 ORDER BY id DESC")
     fun getAllNotBought(): Flow<List<Item>>
 
     @Insert
