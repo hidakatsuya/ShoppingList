@@ -30,23 +30,24 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -56,8 +57,7 @@ import dev.hidakatsuya.shoppinglist.data.Item
 import kotlinx.coroutines.launch
 
 @OptIn(
-    ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class,
-    ExperimentalComposeUiApi::class
+    ExperimentalMaterialApi::class
 )
 @Composable
 fun ItemsScreen(
@@ -65,16 +65,11 @@ fun ItemsScreen(
     viewModel: ItemsViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val itemListUiState by viewModel.itemListUiState.collectAsState()
-    val editItemUiState = viewModel.editItemUiState
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
-
+    val editItemUiState by viewModel.editItemUiState.collectAsState()
     val scope = rememberCoroutineScope()
-    val keyboard = LocalSoftwareKeyboardController.current
-    val focusRequester = remember { FocusRequester() }
-    val focusManager = LocalFocusManager.current
 
     val bottomSheetState = rememberModalBottomSheetState(
-        initialValue = if (viewModel.editItemUiState.isEditing) {
+        initialValue = if (editItemUiState.isEditing) {
             ModalBottomSheetValue.Expanded
         } else {
             ModalBottomSheetValue.Hidden
@@ -88,74 +83,29 @@ fun ItemsScreen(
     )
 
     ModalBottomSheetLayout(
-        modifier = modifier.padding(),
         sheetState = bottomSheetState,
         sheetContent = {
-            Row(
-                modifier = modifier.padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                val saveItem = {
-                    scope.launch {
-                        viewModel.saveItem()
-                        viewModel.finishItemEditing()
-                    }
-                }
-
-                BasicTextField(
-                    modifier = Modifier
-                        .weight(1f)
-                        .focusRequester(focusRequester),
-                    singleLine = true,
-                    value = editItemUiState.details.name,
-                    onValueChange = {
-                        viewModel.updateEditItemUiState(editItemUiState.details.copy(name = it))
+            if (editItemUiState.isEditing) {
+                EditItemName(
+                    name = editItemUiState.details.name,
+                    onSave = {
+                        scope.launch {
+                            viewModel.saveItem()
+                            viewModel.finishItemEditing()
+                        }
                     },
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { saveItem() })
+                    onValueChanged = {
+                        viewModel.updateEditItemUiState(editItemUiState.details.copy(name = it))
+                    }
                 )
-                Button(onClick = { saveItem() }) {
-                    Text("保存")
-                }
-            }
-
-            LaunchedEffect(viewModel.editItemUiState.isEditing) {
-                if (viewModel.editItemUiState.isEditing) {
-                    focusRequester.requestFocus()
-                    keyboard?.show()
-                } else {
-                    focusManager.clearFocus()
-                    keyboard?.hide()
-                }
             }
         }
     ) {
         Scaffold(
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
-            modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-            topBar = {
-                CenterAlignedTopAppBar(
-                    title = {
-                        Text(stringResource(id = R.string.app_name))
-                    },
-                    actions = {
-                        IconButton(onClick = { /*TODO*/ }) {
-                            Icon(
-                                imageVector = Icons.Filled.MoreVert,
-                                contentDescription = "More"
-                            )
-                        }
-                    }
-                )
-            },
+            topBar = { TopBar() },
             floatingActionButtonPosition = FabPosition.End,
-            floatingActionButton = {
-                FloatingActionButton(
-                    onClick = { viewModel.newItem() }
-                ) {
-                    Icon(Icons.Filled.Add, "Delete")
-                }
-            }
+            floatingActionButton = { NewItemButton { viewModel.newItem() } }
         ) { innerPadding ->
             ItemsBody(
                 modifier = modifier
@@ -171,6 +121,76 @@ fun ItemsScreen(
                 onEditItem = { viewModel.editItem(it) }
             )
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TopBar() {
+    CenterAlignedTopAppBar(
+        title = {
+            Text(stringResource(id = R.string.app_name))
+        },
+        actions = {
+            IconButton(onClick = { /*TODO*/ }) {
+                Icon(
+                    imageVector = Icons.Filled.MoreVert,
+                    contentDescription = "More"
+                )
+            }
+        }
+    )
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun EditItemName(
+    name: String,
+    onSave: () -> Unit,
+    onValueChanged: (newName: String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val keyboard = LocalSoftwareKeyboardController.current
+    val focusRequester = remember { FocusRequester() }
+    var nameValue by remember { mutableStateOf(TextFieldValue(name)) }
+
+    Row(
+        modifier = modifier.padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        BasicTextField(
+            modifier = Modifier
+                .weight(1f)
+                .focusRequester(focusRequester),
+            singleLine = true,
+            value = nameValue,
+            onValueChange = {
+                onValueChanged(it.text)
+                nameValue = it
+            },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { onSave() }),
+        )
+        Button(onClick = { onSave() }) {
+            Text("保存")
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (name.isNotEmpty()) {
+            nameValue = nameValue.copy(selection = TextRange(name.length))
+        }
+        focusRequester.requestFocus()
+        keyboard?.show()
+    }
+}
+
+@Composable
+private fun NewItemButton(onClick: () -> Unit) {
+    FloatingActionButton(
+        onClick = { onClick() }
+    ) {
+        Icon(Icons.Filled.Add, "Delete")
     }
 }
 

@@ -1,14 +1,14 @@
 package dev.hidakatsuya.shoppinglist.ui
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.hidakatsuya.shoppinglist.data.Item
 import dev.hidakatsuya.shoppinglist.data.ItemsRepository
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
@@ -20,26 +20,27 @@ class ItemsViewModel(private val itemsRepository: ItemsRepository) : ViewModel()
                 started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
                 initialValue = ItemsUiState.ItemList()
             )
-    var editItemUiState by mutableStateOf(ItemsUiState.EditItem())
-        private set
+    private val _editItemUiState = MutableStateFlow(ItemsUiState.EditItem())
+    val editItemUiState: StateFlow<ItemsUiState.EditItem> = _editItemUiState.asStateFlow()
 
     companion object {
         private const val TIMEOUT_MILLIS = 5_000L
     }
 
     fun newItem() {
-        editItemUiState = ItemsUiState.EditItem(isEditing = true)
+        _editItemUiState.value = ItemsUiState.EditItem(isEditing = true)
     }
 
     fun editItem(item: Item) {
-        editItemUiState = ItemsUiState.EditItem(
+        Log.d("xxx", item.name)
+        _editItemUiState.value = ItemsUiState.EditItem(
             isEditing = true,
             details = item.toItemDetails()
         )
     }
 
     fun updateEditItemUiState(itemDetails: ItemDetails) {
-        editItemUiState = ItemsUiState.EditItem(
+        _editItemUiState.value = ItemsUiState.EditItem(
             isEditing = true,
             details = itemDetails,
             isValid = true
@@ -47,14 +48,14 @@ class ItemsViewModel(private val itemsRepository: ItemsRepository) : ViewModel()
     }
 
     fun finishItemEditing() {
-        editItemUiState = ItemsUiState.EditItem(isEditing = false)
+        _editItemUiState.value = ItemsUiState.EditItem(isEditing = false)
     }
 
     suspend fun saveItem() {
-        if (editItemUiState.details.id == 0) {
-            itemsRepository.addItem(editItemUiState.details.toItem())
+        if (editItemUiState.value.details.id == 0) {
+            itemsRepository.addItem(editItemUiState.value.details.toItem())
         } else {
-            itemsRepository.updateItem(editItemUiState.details.toItem())
+            itemsRepository.updateItem(editItemUiState.value.details.toItem())
         }
     }
 
