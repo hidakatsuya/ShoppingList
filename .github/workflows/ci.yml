@@ -25,10 +25,7 @@ jobs:
         run: ./gradlew lint
 
       - name: Check and report lint results
-        uses: actions/github-script@v6
+        uses: hidakatsuya/action-report-android-lint@v1
         if: always()
         with:
-          script: |
-            const script = require('.github/workflows/report-lint.js')
-            const resultFile = 'app/build/reports/lint-results-debug.txt'
-            await script({ core, resultFile })
+          result-path: 'app/build/reports/lint-results-debug.xml'
