@@ -25,7 +25,7 @@ jobs:
         run: ./gradlew lint
 
       - name: Check and report lint results
-        uses: hidakatsuya/action-report-android-lint@v1.1.1
+        uses: hidakatsuya/action-report-android-lint@v1.1.2
         if: always()
         with:
           result-path: 'app/build/reports/lint-results-debug.xml'
