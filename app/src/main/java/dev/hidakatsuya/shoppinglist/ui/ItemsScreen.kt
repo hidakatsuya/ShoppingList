@@ -32,7 +32,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,6 +50,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.hidakatsuya.shoppinglist.R
 import dev.hidakatsuya.shoppinglist.data.Item
@@ -64,8 +64,8 @@ fun ItemsScreen(
     modifier: Modifier = Modifier,
     viewModel: ItemsViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
-    val itemListUiState by viewModel.itemListUiState.collectAsState()
-    val editItemUiState by viewModel.editItemUiState.collectAsState()
+    val itemListUiState by viewModel.itemListUiState.collectAsStateWithLifecycle()
+    val editItemUiState by viewModel.editItemUiState.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
 
     val bottomSheetState = rememberModalBottomSheetState(
