@@ -1,4 +1,4 @@
-@file:Suppress("UnstableApiUsage", "OldTargetApi")
+@file:Suppress("UnstableApiUsage", "OldTargetApi", "GradleDependency")
 
 plugins {
     id("com.android.application")
