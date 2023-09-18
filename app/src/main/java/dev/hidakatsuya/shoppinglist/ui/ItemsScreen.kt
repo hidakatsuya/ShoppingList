@@ -44,7 +44,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
@@ -54,6 +53,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.hidakatsuya.shoppinglist.R
 import dev.hidakatsuya.shoppinglist.data.Item
+import dev.hidakatsuya.shoppinglist.extension.copyWithApplyingComposition
+import dev.hidakatsuya.shoppinglist.extension.copyWithMovingCursorToEndOf
 import kotlinx.coroutines.launch
 
 @OptIn(
@@ -92,7 +93,7 @@ fun ItemsScreen(
                     onSave = {
                         scope.launch { viewModel.saveItem() }
                     },
-                    onValueChanged = {
+                    onNameChange = {
                         viewModel.updateEditItemUiState(editItemUiState.details.copy(name = it))
                     }
                 )
@@ -146,7 +147,7 @@ private fun EditItemName(
     name: String,
     canSave: Boolean,
     onSave: () -> Unit,
-    onValueChanged: (newName: String) -> Unit,
+    onNameChange: (newName: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val keyboard = LocalSoftwareKeyboardController.current
@@ -164,23 +165,31 @@ private fun EditItemName(
             singleLine = true,
             value = nameValue,
             onValueChange = {
-                onValueChanged(it.text)
-                nameValue = it
+                val completedName = it.text.replace("\n", "")
+                onNameChange(completedName)
+                nameValue = it.copy(text = completedName)
             },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { onSave() }),
         )
         Button(
             enabled = canSave,
-            onClick = { onSave() }
+            onClick = {
+                // Apply text composition before saving.
+                // Otherwise, the text composition will be applied on save
+                // and the onValueChange event will be fired,
+                // and the bottom sheet will remain visible by setting isEditing to true.
+                nameValue = nameValue.copyWithApplyingComposition()
+                onSave()
+            }
         ) {
-            Text("保存")
+            Text(stringResource(R.string.save_item))
         }
     }
 
     LaunchedEffect(Unit) {
         if (name.isNotEmpty()) {
-            nameValue = nameValue.copy(selection = TextRange(name.length))
+            nameValue = nameValue.copyWithMovingCursorToEndOf(name)
         }
         focusRequester.requestFocus()
         keyboard?.show()
