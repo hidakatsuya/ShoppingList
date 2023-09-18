@@ -88,11 +88,9 @@ fun ItemsScreen(
             if (editItemUiState.isEditing) {
                 EditItemName(
                     name = editItemUiState.details.name,
+                    canSave = editItemUiState.isValid,
                     onSave = {
-                        scope.launch {
-                            viewModel.saveItem()
-                            viewModel.finishItemEditing()
-                        }
+                        scope.launch { viewModel.saveItem() }
                     },
                     onValueChanged = {
                         viewModel.updateEditItemUiState(editItemUiState.details.copy(name = it))
@@ -146,6 +144,7 @@ private fun TopBar() {
 @Composable
 private fun EditItemName(
     name: String,
+    canSave: Boolean,
     onSave: () -> Unit,
     onValueChanged: (newName: String) -> Unit,
     modifier: Modifier = Modifier
@@ -171,7 +170,10 @@ private fun EditItemName(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { onSave() }),
         )
-        Button(onClick = { onSave() }) {
+        Button(
+            enabled = canSave,
+            onClick = { onSave() }
+        ) {
             Text("保存")
         }
     }

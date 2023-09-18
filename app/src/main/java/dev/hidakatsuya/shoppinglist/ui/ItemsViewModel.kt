@@ -1,6 +1,5 @@
 package dev.hidakatsuya.shoppinglist.ui
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.hidakatsuya.shoppinglist.data.Item
@@ -32,10 +31,10 @@ class ItemsViewModel(private val itemsRepository: ItemsRepository) : ViewModel()
     }
 
     fun editItem(item: Item) {
-        Log.d("xxx", item.name)
         _editItemUiState.value = ItemsUiState.EditItem(
             isEditing = true,
-            details = item.toItemDetails()
+            details = item.toItemDetails(),
+            isValid = true
         )
     }
 
@@ -43,7 +42,7 @@ class ItemsViewModel(private val itemsRepository: ItemsRepository) : ViewModel()
         _editItemUiState.value = ItemsUiState.EditItem(
             isEditing = true,
             details = itemDetails,
-            isValid = true
+            isValid = itemDetails.validate()
         )
     }
 
@@ -52,11 +51,16 @@ class ItemsViewModel(private val itemsRepository: ItemsRepository) : ViewModel()
     }
 
     suspend fun saveItem() {
-        if (editItemUiState.value.details.id == 0) {
-            itemsRepository.addItem(editItemUiState.value.details.toItem())
+        val uiState = editItemUiState.value
+
+        if (!uiState.isValid) return
+
+        if (uiState.details.id == 0) {
+            itemsRepository.addItem(uiState.details.toItem())
         } else {
-            itemsRepository.updateItem(editItemUiState.value.details.toItem())
+            itemsRepository.updateItem(uiState.details.toItem())
         }
+        finishItemEditing()
     }
 
     suspend fun removeItem(item: Item) {
@@ -87,6 +91,10 @@ fun ItemDetails.toItem(): Item = Item(
     id = id,
     name = name
 )
+
+fun ItemDetails.validate(): Boolean {
+    return name.isNotEmpty()
+}
 
 fun Item.toItemDetails(): ItemDetails = ItemDetails(
     id = id,
