@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -67,6 +69,8 @@ fun ItemsScreen(
 ) {
     val itemListUiState by viewModel.itemListUiState.collectAsStateWithLifecycle()
     val editItemUiState by viewModel.editItemUiState.collectAsStateWithLifecycle()
+
+    val itemListScrollState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
     val bottomSheetState = rememberModalBottomSheetState(
@@ -91,7 +95,13 @@ fun ItemsScreen(
                     name = editItemUiState.details.name,
                     canSave = editItemUiState.isValid,
                     onSave = {
-                        scope.launch { viewModel.saveItem() }
+                        scope.launch {
+                            viewModel.saveItem()
+
+                            if (editItemUiState.isNew) {
+                                itemListScrollState.animateScrollToItem(index = 0)
+                            }
+                        }
                     },
                     onNameChange = {
                         viewModel.updateEditItemUiState(editItemUiState.details.copy(name = it))
@@ -110,15 +120,20 @@ fun ItemsScreen(
                 modifier = modifier
                     .padding(innerPadding)
                     .fillMaxSize(),
-                itemList = itemListUiState.items,
-                onDeleteItem = {
-                    scope.launch { viewModel.removeItem(it) }
-                },
-                onBuyItem = {
-                    scope.launch { viewModel.changeItemBought(it) }
-                },
-                onEditItem = { viewModel.editItem(it) }
-            )
+                isItemEmpty = itemListUiState.items.isEmpty()
+            ) {
+                ItemList(
+                    list = itemListUiState.items,
+                    state = itemListScrollState,
+                    onDeleteItem = {
+                        scope.launch { viewModel.removeItem(it) }
+                    },
+                    onCompleteItem = {
+                        scope.launch { viewModel.changeItemBought(it) }
+                    },
+                    onEditItem = { viewModel.editItem(it) }
+                )
+            }
         }
     }
 }
@@ -207,29 +222,22 @@ private fun NewItemButton(onClick: () -> Unit) {
 
 @Composable
 private fun ItemsBody(
-    itemList: List<Item>,
+    isItemEmpty: Boolean,
     modifier: Modifier = Modifier,
-    onDeleteItem: (Item) -> Unit,
-    onBuyItem: (Item) -> Unit,
-    onEditItem: (Item) -> Unit
+    listContent: @Composable () -> Unit
 ) {
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        if (itemList.isEmpty()) {
+        if (isItemEmpty) {
             Text(
                 text = "No items",
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleLarge
             )
         } else {
-            ItemList(
-                list = itemList,
-                onDeleteItem = onDeleteItem,
-                onCompleteItem = onBuyItem,
-                onEditItem = onEditItem
-            )
+            listContent()
         }
     }
 }
@@ -237,12 +245,16 @@ private fun ItemsBody(
 @Composable
 private fun ItemList(
     modifier: Modifier = Modifier,
+    state: LazyListState,
     list: List<Item>,
     onDeleteItem: (Item) -> Unit,
     onCompleteItem: (Item) -> Unit,
     onEditItem: (Item) -> Unit
 ) {
-    LazyColumn(modifier = modifier) {
+    LazyColumn(
+        modifier = modifier,
+        state = state
+    ) {
         items(
             items = list,
             key = { item -> item.id }
@@ -292,11 +304,14 @@ private fun ItemRow(
 
 @Preview(showBackground = true, widthDp = 320, heightDp = 320)
 @Composable
-private fun ItemsPreview() {
-    ItemsBody(
-        itemList = listOf(Item(id = 1, name = "Milk", bought = 0)),
-        onDeleteItem = {},
-        onBuyItem = {},
-        onEditItem = {}
-    )
+private fun ItemsBodyPreview() {
+    ItemsBody(isItemEmpty = false) {
+        ItemList(
+            state = rememberLazyListState(),
+            list = listOf(Item(id = 1, name = "Milk", bought = 0)),
+            onDeleteItem = {},
+            onCompleteItem = {},
+            onEditItem ={}
+        )
+    }
 }

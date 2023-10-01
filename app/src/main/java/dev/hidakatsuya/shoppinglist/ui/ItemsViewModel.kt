@@ -27,38 +27,42 @@ class ItemsViewModel(private val itemsRepository: ItemsRepository) : ViewModel()
     }
 
     fun newItem() {
-        _editItemUiState.value = ItemsUiState.EditItem(isEditing = true)
+        _editItemUiState.value = ItemsUiState.EditItem(
+            isEditing = true,
+            details = ItemDetails(),
+            isNew = true
+        )
     }
 
     fun editItem(item: Item) {
         _editItemUiState.value = ItemsUiState.EditItem(
             isEditing = true,
             details = item.toItemDetails(),
+            isNew = false,
             isValid = true
         )
     }
 
     fun updateEditItemUiState(itemDetails: ItemDetails) {
-        _editItemUiState.value = ItemsUiState.EditItem(
-            isEditing = true,
+        _editItemUiState.value = _editItemUiState.value.copy(
             details = itemDetails,
             isValid = itemDetails.validate()
         )
     }
 
     fun finishItemEditing() {
-        _editItemUiState.value = ItemsUiState.EditItem(isEditing = false)
+        _editItemUiState.value = _editItemUiState.value.copy(isEditing = false)
     }
 
     suspend fun saveItem() {
-        val uiState = editItemUiState.value
+        val state = editItemUiState.value
 
-        if (!uiState.isValid) return
+        if (!state.isValid) return
 
-        if (uiState.details.id == 0) {
-            itemsRepository.addItem(uiState.details.toItem())
+        if (state.details.id == 0) {
+            itemsRepository.addItem(state.details.toItem())
         } else {
-            itemsRepository.updateItem(uiState.details.toItem())
+            itemsRepository.updateItem(state.details.toItem())
         }
         finishItemEditing()
     }
@@ -77,6 +81,7 @@ object ItemsUiState {
     data class EditItem(
         val isEditing: Boolean = false,
         val details: ItemDetails = ItemDetails(),
+        val isNew: Boolean = true,
         val isValid: Boolean = false
     )
 }
