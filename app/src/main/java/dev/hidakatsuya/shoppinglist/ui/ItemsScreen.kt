@@ -1,5 +1,6 @@
 package dev.hidakatsuya.shoppinglist.ui
 
+import android.content.Intent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,6 +14,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.DropdownMenu
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ModalBottomSheetLayout
 import androidx.compose.material.ModalBottomSheetValue
@@ -24,6 +26,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
@@ -44,6 +47,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -53,6 +57,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
 import dev.hidakatsuya.shoppinglist.R
 import dev.hidakatsuya.shoppinglist.data.Item
 import dev.hidakatsuya.shoppinglist.extension.copyWithApplyingComposition
@@ -141,15 +146,33 @@ fun ItemsScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TopBar() {
+    val context = LocalContext.current
+
     CenterAlignedTopAppBar(
         title = {
             Text(stringResource(id = R.string.app_name))
         },
         actions = {
-            IconButton(onClick = { /*TODO*/ }) {
+            var menuExpanded by remember { mutableStateOf(false) }
+
+            IconButton(
+                onClick = { menuExpanded = true },
+            ) {
                 Icon(
                     imageVector = Icons.Filled.MoreVert,
                     contentDescription = "More"
+                )
+            }
+            DropdownMenu(
+                expanded = menuExpanded,
+                onDismissRequest = { menuExpanded = false },
+            ) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.open_source_licenses)) },
+                    onClick = {
+                        context.startActivity(Intent(context, OssLicensesMenuActivity::class.java))
+                        menuExpanded = false
+                    }
                 )
             }
         }

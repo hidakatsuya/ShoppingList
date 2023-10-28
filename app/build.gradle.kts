@@ -2,6 +2,7 @@
 
 plugins {
     id("com.android.application")
+    id("com.google.android.gms.oss-licenses-plugin")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
 }
@@ -74,4 +75,5 @@ dependencies {
     annotationProcessor("androidx.room:room-compiler:2.5.2")
     ksp("androidx.room:room-compiler:2.5.2")
     implementation("androidx.room:room-ktx:2.5.2")
+    implementation("com.google.android.gms:play-services-oss-licenses:17.0.1")
 }
