@@ -143,7 +143,7 @@ private fun TopBar() {
             ) {
                 Icon(
                     imageVector = Icons.Filled.MoreVert,
-                    contentDescription = "More"
+                    contentDescription = stringResource(R.string.more_menu_description)
                 )
             }
             DropdownMenu(
