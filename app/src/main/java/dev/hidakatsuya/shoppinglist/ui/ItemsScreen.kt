@@ -4,7 +4,6 @@ import android.content.Intent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,18 +13,14 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.ModalBottomSheetLayout
-import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
@@ -33,8 +28,10 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,7 +40,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -65,7 +61,7 @@ import dev.hidakatsuya.shoppinglist.extension.copyWithMovingCursorToEndOf
 import kotlinx.coroutines.launch
 
 @OptIn(
-    ExperimentalMaterialApi::class
+    ExperimentalMaterial3Api::class
 )
 @Composable
 fun ItemsScreen(
@@ -78,67 +74,54 @@ fun ItemsScreen(
     val itemListScrollState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
-    val bottomSheetState = rememberModalBottomSheetState(
-        initialValue = if (editItemUiState.isEditing) {
-            ModalBottomSheetValue.Expanded
-        } else {
-            ModalBottomSheetValue.Hidden
-        },
-        confirmValueChange = {
-            if (it == ModalBottomSheetValue.Hidden) {
-                viewModel.finishItemEditing()
-            }
-            true
+    val bottomSheetState = rememberModalBottomSheetState()
+
+    Scaffold(
+        topBar = { TopBar() },
+        floatingActionButtonPosition = FabPosition.End,
+        floatingActionButton = { NewItemButton { viewModel.newItem() } }
+    ) { innerPadding ->
+        ItemsBody(
+            modifier = modifier
+                .padding(innerPadding)
+                .fillMaxSize(),
+            isItemEmpty = itemListUiState.items.isEmpty()
+        ) {
+            ItemList(
+                list = itemListUiState.items,
+                state = itemListScrollState,
+                onDeleteItem = {
+                    scope.launch { viewModel.removeItem(it) }
+                },
+                onCompleteItem = {
+                    scope.launch { viewModel.changeItemBought(it) }
+                },
+                onEditItem = { viewModel.editItem(it) }
+            )
         }
-    )
+    }
 
-    ModalBottomSheetLayout(
-        sheetState = bottomSheetState,
-        sheetContent = {
-            if (editItemUiState.isEditing) {
-                EditItemName(
-                    name = editItemUiState.details.name,
-                    canSave = editItemUiState.isValid,
-                    onSave = {
-                        scope.launch {
-                            viewModel.saveItem()
+    if (editItemUiState.isEditing) {
+        ModalBottomSheet(
+            onDismissRequest = { viewModel.finishItemEditing() },
+            sheetState = bottomSheetState
+        ) {
+            EditItemName(
+                name = editItemUiState.details.name,
+                canSave = editItemUiState.isValid,
+                onSave = {
+                    scope.launch {
+                        viewModel.saveItem()
 
-                            if (editItemUiState.isNew) {
-                                itemListScrollState.animateScrollToItem(index = 0)
-                            }
+                        if (editItemUiState.isNew) {
+                            itemListScrollState.animateScrollToItem(index = 0)
                         }
-                    },
-                    onNameChange = {
-                        viewModel.updateEditItemUiState(editItemUiState.details.copy(name = it))
                     }
-                )
-            }
-        }
-    ) {
-        Scaffold(
-            contentWindowInsets = WindowInsets(0, 0, 0, 0),
-            topBar = { TopBar() },
-            floatingActionButtonPosition = FabPosition.End,
-            floatingActionButton = { NewItemButton { viewModel.newItem() } }
-        ) { innerPadding ->
-            ItemsBody(
-                modifier = modifier
-                    .padding(innerPadding)
-                    .fillMaxSize(),
-                isItemEmpty = itemListUiState.items.isEmpty()
-            ) {
-                ItemList(
-                    list = itemListUiState.items,
-                    state = itemListScrollState,
-                    onDeleteItem = {
-                        scope.launch { viewModel.removeItem(it) }
-                    },
-                    onCompleteItem = {
-                        scope.launch { viewModel.changeItemBought(it) }
-                    },
-                    onEditItem = { viewModel.editItem(it) }
-                )
-            }
+                },
+                onNameChange = {
+                    viewModel.updateEditItemUiState(editItemUiState.details.copy(name = it))
+                }
+            )
         }
     }
 }
@@ -179,7 +162,6 @@ private fun TopBar() {
     )
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun EditItemName(
     name: String,
