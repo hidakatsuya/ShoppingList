@@ -1,10 +1,15 @@
 package dev.hidakatsuya.shoppinglist.ui
 
 import android.content.Intent
+import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -31,6 +36,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,11 +49,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -79,7 +87,9 @@ fun ItemsScreen(
     Scaffold(
         topBar = { TopBar() },
         floatingActionButtonPosition = FabPosition.End,
-        floatingActionButton = { NewItemButton { viewModel.newItem() } }
+        floatingActionButton = {
+            NewItemButton { viewModel.newItem() }
+        }
     ) { innerPadding ->
         ItemsBody(
             modifier = modifier
@@ -104,7 +114,8 @@ fun ItemsScreen(
     if (editItemUiState.isEditing) {
         ModalBottomSheet(
             onDismissRequest = { viewModel.finishItemEditing() },
-            sheetState = bottomSheetState
+            sheetState = bottomSheetState,
+            dragHandle = null,
         ) {
             EditItemName(
                 name = editItemUiState.details.name,
@@ -133,7 +144,10 @@ private fun TopBar() {
 
     CenterAlignedTopAppBar(
         title = {
-            Text(stringResource(id = R.string.app_name))
+            Text(
+                stringResource(id = R.string.app_name),
+                fontWeight = MaterialTheme.typography.titleMedium.fontWeight
+            )
         },
         actions = {
             var menuExpanded by remember { mutableStateOf(false) }
@@ -143,7 +157,7 @@ private fun TopBar() {
             ) {
                 Icon(
                     imageVector = Icons.Filled.MoreVert,
-                    contentDescription = stringResource(R.string.more_menu_description)
+                    contentDescription = stringResource(R.string.menu_more_description)
                 )
             }
             DropdownMenu(
@@ -162,6 +176,7 @@ private fun TopBar() {
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun EditItemName(
     name: String,
@@ -173,10 +188,11 @@ private fun EditItemName(
     val keyboard = LocalSoftwareKeyboardController.current
     val focusRequester = remember { FocusRequester() }
     var nameValue by remember { mutableStateOf(TextFieldValue(name)) }
+    val interactionSource = remember { MutableInteractionSource() }
 
     Row(
-        modifier = modifier.padding(8.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier = modifier.padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         BasicTextField(
             modifier = Modifier
@@ -191,6 +207,27 @@ private fun EditItemName(
             },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { onSave() }),
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
+            textStyle = MaterialTheme.typography.bodyMedium.copy(
+                color = MaterialTheme.colorScheme.onSurface
+            ),
+            decorationBox = { innerTextField ->
+                TextFieldDefaults.DecorationBox(
+                    value = nameValue.text,
+                    innerTextField = innerTextField,
+                    enabled = true,
+                    singleLine = true,
+                    visualTransformation = VisualTransformation.None,
+                    interactionSource = interactionSource,
+                    placeholder = { Text(stringResource(R.string.item_name_placeholder)) },
+                    contentPadding = TextFieldDefaults.contentPaddingWithoutLabel(
+                        start = 0.dp,
+                        end = 0.dp,
+                    )
+                ) {
+                    Box(Modifier)
+                }
+            }
         )
         Button(
             enabled = canSave,
@@ -221,7 +258,10 @@ private fun NewItemButton(onClick: () -> Unit) {
     FloatingActionButton(
         onClick = { onClick() }
     ) {
-        Icon(Icons.Filled.Add, "Delete")
+        Icon(
+            Icons.Filled.Add,
+            stringResource(R.string.button_item_delete_label)
+        )
     }
 }
 
@@ -279,29 +319,33 @@ private fun ItemRow(
     name: String,
     onDeleteClick: () -> Unit,
     onCompleteClick: () -> Unit,
-    onNameClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onNameClick: () -> Unit
 ) {
     Row(
-        modifier = modifier,
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onCompleteClick) {
             Icon(
                 imageVector = Icons.Filled.Check,
-                contentDescription = "Complete"
+                contentDescription = stringResource(R.string.button_complete_description)
             )
         }
-        Text(
+        Column(
             modifier = Modifier
                 .weight(1f)
+                .heightIn(48.dp)
                 .clickable(onClick = onNameClick),
-            text = name
-        )
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.bodyLarge
+            )
+        }
         IconButton(onClick = onDeleteClick) {
             Icon(
                 imageVector = Icons.Filled.Close,
-                contentDescription = "Delete"
+                contentDescription = stringResource(R.string.button_delete_description)
             )
         }
     }
@@ -319,4 +363,15 @@ private fun ItemsBodyPreview() {
             onEditItem ={}
         )
     }
+}
+
+@Preview(widthDp = 320, uiMode = UI_MODE_NIGHT_YES)
+@Composable
+private fun EditItemNamePreview() {
+    EditItemName(
+        name = "Milk",
+        canSave = true,
+        onSave = {},
+        onNameChange = {}
+    )
 }

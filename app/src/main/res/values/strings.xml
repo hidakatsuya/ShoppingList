@@ -2,5 +2,9 @@
     <string name="app_name">Shopping List</string>
     <string name="save_item">Save</string>
     <string name="open_source_licenses">Open Source Licenses</string>
-    <string name="more_menu_description">More</string>
+    <string name="menu_more_description">More</string>
+    <string name="button_item_delete_label">Delete</string>
+    <string name="button_complete_description">Complete</string>
+    <string name="button_delete_description">Delete</string>
+    <string name="item_name_placeholder">Item Name</string>
 </resources>
