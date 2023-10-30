@@ -52,7 +52,7 @@ android {
 
 dependencies {
     implementation("androidx.core:core-ktx:1.12.0")
-    implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.9.10"))
+    implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.9.20"))
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
     implementation("androidx.activity:activity-compose:1.8.0")
     implementation(platform("androidx.compose:compose-bom:2023.10.01"))
