@@ -17,7 +17,7 @@ class MainActivity : ComponentActivity() {
             ShoppingListTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = MaterialTheme.colorScheme.surface
                 ) {
                     ItemsScreen()
                 }

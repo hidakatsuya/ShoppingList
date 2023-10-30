@@ -1,7 +1,6 @@
 package dev.hidakatsuya.shoppinglist.ui
 
 import android.content.Intent
-import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -20,8 +19,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -91,23 +90,27 @@ fun ItemsScreen(
             NewItemButton { viewModel.newItem() }
         }
     ) { innerPadding ->
-        ItemsBody(
-            modifier = modifier
-                .padding(innerPadding)
-                .fillMaxSize(),
-            isItemEmpty = itemListUiState.items.isEmpty()
+        Column(
+            Modifier.padding(innerPadding)
         ) {
-            ItemList(
-                list = itemListUiState.items,
-                state = itemListScrollState,
-                onDeleteItem = {
-                    scope.launch { viewModel.removeItem(it) }
-                },
-                onCompleteItem = {
-                    scope.launch { viewModel.changeItemBought(it) }
-                },
-                onEditItem = { viewModel.editItem(it) }
-            )
+            ItemsBody(
+                modifier = modifier
+                    .padding(8.dp)
+                    .fillMaxSize(),
+                isItemEmpty = itemListUiState.items.isEmpty()
+            ) {
+                ItemList(
+                    list = itemListUiState.items,
+                    state = itemListScrollState,
+                    onDeleteItem = {
+                        scope.launch { viewModel.removeItem(it) }
+                    },
+                    onCompleteItem = {
+                        scope.launch { viewModel.changeItemBought(it) }
+                    },
+                    onEditItem = { viewModel.editItem(it) }
+                )
+            }
         }
     }
 
@@ -116,6 +119,7 @@ fun ItemsScreen(
             onDismissRequest = { viewModel.finishItemEditing() },
             sheetState = bottomSheetState,
             dragHandle = null,
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
         ) {
             EditItemName(
                 name = editItemUiState.details.name,
@@ -191,8 +195,12 @@ private fun EditItemName(
     val interactionSource = remember { MutableInteractionSource() }
 
     Row(
-        modifier = modifier.padding(16.dp),
+        modifier = modifier.padding(
+            vertical = 16.dp,
+            horizontal = 24.dp
+        ),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         BasicTextField(
             modifier = Modifier
@@ -208,7 +216,7 @@ private fun EditItemName(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { onSave() }),
             cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
-            textStyle = MaterialTheme.typography.bodyMedium.copy(
+            textStyle = MaterialTheme.typography.bodyLarge.copy(
                 color = MaterialTheme.colorScheme.onSurface
             ),
             decorationBox = { innerTextField ->
@@ -219,7 +227,9 @@ private fun EditItemName(
                     singleLine = true,
                     visualTransformation = VisualTransformation.None,
                     interactionSource = interactionSource,
-                    placeholder = { Text(stringResource(R.string.item_name_placeholder)) },
+                    placeholder = {
+                        Text(stringResource(R.string.item_name_placeholder))
+                    },
                     contentPadding = TextFieldDefaults.contentPaddingWithoutLabel(
                         start = 0.dp,
                         end = 0.dp,
@@ -256,7 +266,9 @@ private fun EditItemName(
 @Composable
 private fun NewItemButton(onClick: () -> Unit) {
     FloatingActionButton(
-        onClick = { onClick() }
+        onClick = { onClick() },
+        containerColor = MaterialTheme.colorScheme.primary,
+        contentColor = MaterialTheme.colorScheme.onPrimary,
     ) {
         Icon(
             Icons.Filled.Add,
@@ -298,7 +310,8 @@ private fun ItemList(
 ) {
     LazyColumn(
         modifier = modifier,
-        state = state
+        state = state,
+        verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         items(
             items = list,
@@ -321,20 +334,29 @@ private fun ItemRow(
     onCompleteClick: () -> Unit,
     onNameClick: () -> Unit
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+
     Row(
-        verticalAlignment = Alignment.CenterVertically
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         IconButton(onClick = onCompleteClick) {
             Icon(
-                imageVector = Icons.Filled.Check,
+                imageVector = Icons.Filled.Done,
                 contentDescription = stringResource(R.string.button_complete_description)
             )
         }
         Column(
             modifier = Modifier
                 .weight(1f)
-                .heightIn(48.dp)
-                .clickable(onClick = onNameClick),
+                .heightIn(min = 48.dp)
+                .clickable(
+                    onClick = onNameClick,
+                    indication = null,
+                    interactionSource = interactionSource
+                ),
             verticalArrangement = Arrangement.Center
         ) {
             Text(
@@ -344,7 +366,7 @@ private fun ItemRow(
         }
         IconButton(onClick = onDeleteClick) {
             Icon(
-                imageVector = Icons.Filled.Close,
+                imageVector = Icons.Filled.Delete,
                 contentDescription = stringResource(R.string.button_delete_description)
             )
         }
@@ -353,19 +375,20 @@ private fun ItemRow(
 
 @Preview(showBackground = true, widthDp = 320, heightDp = 320)
 @Composable
-private fun ItemsBodyPreview() {
-    ItemsBody(isItemEmpty = false) {
-        ItemList(
-            state = rememberLazyListState(),
-            list = listOf(Item(id = 1, name = "Milk", bought = 0)),
-            onDeleteItem = {},
-            onCompleteItem = {},
-            onEditItem ={}
-        )
-    }
+private fun ItemListPreview() {
+    ItemList(
+        state = rememberLazyListState(),
+        list = listOf(
+            Item(id = 1, name = "Milk", bought = 0),
+            Item(id = 2, name = "MilkMilkMilkMilkMilkMilkMilkMilkMilkMilkMilk", bought = 0)
+        ),
+        onDeleteItem = {},
+        onCompleteItem = {},
+        onEditItem ={}
+    )
 }
 
-@Preview(widthDp = 320, uiMode = UI_MODE_NIGHT_YES)
+@Preview(showBackground = true, widthDp = 320)
 @Composable
 private fun EditItemNamePreview() {
     EditItemName(
