@@ -1,9 +1,9 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 plugins {
-    id("com.android.application") version "8.1.2" apply false
-    id("com.android.library") version "8.1.2" apply false
-    id("org.jetbrains.kotlin.android") version "1.9.10" apply false
-    id("com.google.devtools.ksp") version "1.9.10-1.0.13" apply false
+    alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.android.library) apply false
+    alias(libs.plugins.kotlin) apply false
+    alias(libs.plugins.ksp) apply false
 }
 
 buildscript {
@@ -11,6 +11,6 @@ buildscript {
         google()
     }
     dependencies {
-        classpath("com.google.android.gms:oss-licenses-plugin:0.10.6")
+        classpath(libs.google.oss.licenses.plugin)
     }
 }
