@@ -1,10 +1,10 @@
 [versions]
 androidGradlePlugin = "8.1.2"
 
-androidxActivity = "1.8.0"
+androidxActivity = "1.8.1"
 androidxCore = "1.12.0"
 androidxComposeBom = "2023.10.01"
-androidxComposeMaterial3 = "1.2.0-alpha10"
+androidxComposeMaterial3 = "1.2.0-alpha11"
 androidxLifecycle = "2.6.2"
 androidxRoom = "2.6.0"
 androidxTestEspresso = "3.5.1"
