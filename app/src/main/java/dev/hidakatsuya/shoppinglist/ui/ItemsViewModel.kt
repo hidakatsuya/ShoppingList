@@ -29,7 +29,7 @@ class ItemsViewModel(private val itemsRepository: ItemsRepository) : ViewModel()
     fun newItem() {
         _editItemUiState.value = ItemsUiState.EditItem(
             isEditing = true,
-            details = ItemDetails(),
+            itemDetails = ItemDetails(),
             isNew = true
         )
     }
@@ -37,7 +37,7 @@ class ItemsViewModel(private val itemsRepository: ItemsRepository) : ViewModel()
     fun editItem(item: Item) {
         _editItemUiState.value = ItemsUiState.EditItem(
             isEditing = true,
-            details = item.toItemDetails(),
+            itemDetails = item.toItemDetails(),
             isNew = false,
             isValid = true
         )
@@ -45,7 +45,7 @@ class ItemsViewModel(private val itemsRepository: ItemsRepository) : ViewModel()
 
     fun updateEditItemUiState(itemDetails: ItemDetails) {
         _editItemUiState.value = _editItemUiState.value.copy(
-            details = itemDetails,
+            itemDetails = itemDetails,
             isValid = itemDetails.validate()
         )
     }
@@ -55,14 +55,14 @@ class ItemsViewModel(private val itemsRepository: ItemsRepository) : ViewModel()
     }
 
     suspend fun saveItem() {
-        val state = editItemUiState.value
+        val editItem = editItemUiState.value
 
-        if (!state.isValid) return
+        if (!editItem.isValid) return
 
-        if (state.details.id == 0) {
-            itemsRepository.addItem(state.details.toItem())
+        if (editItem.isNew) {
+            itemsRepository.addItem(editItem.itemDetails.toItem())
         } else {
-            itemsRepository.updateItem(state.details.toItem())
+            itemsRepository.updateItem(editItem.itemDetails.toItem())
         }
         finishItemEditing()
     }
@@ -80,9 +80,9 @@ object ItemsUiState {
     data class ItemList(val items: List<Item> = listOf())
     data class EditItem(
         val isEditing: Boolean = false,
-        val details: ItemDetails = ItemDetails(),
         val isNew: Boolean = true,
-        val isValid: Boolean = false
+        val isValid: Boolean = false,
+        val itemDetails: ItemDetails = ItemDetails(),
     )
 }
 

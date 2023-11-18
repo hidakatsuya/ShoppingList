@@ -122,7 +122,7 @@ fun ItemsScreen(
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
         ) {
             EditItemName(
-                name = editItemUiState.details.name,
+                name = editItemUiState.itemDetails.name,
                 canSave = editItemUiState.isValid,
                 onSave = {
                     scope.launch {
@@ -134,7 +134,7 @@ fun ItemsScreen(
                     }
                 },
                 onNameChange = {
-                    viewModel.updateEditItemUiState(editItemUiState.details.copy(name = it))
+                    viewModel.updateEditItemUiState(editItemUiState.itemDetails.copy(name = it))
                 }
             )
         }
